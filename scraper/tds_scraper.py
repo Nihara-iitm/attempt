@@ -24,12 +24,6 @@ class TDSData(TypedDict):
 
 
 class TDSScraper:
-    def __init__(self):
-        # Set up Playwright
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=True)
-        self.page = self.browser.new_page()
-
     def scrape_course_content(
         self,
         base_url: str = "https://tds.s-anand.net/#/2025-01/",
@@ -207,12 +201,21 @@ class TDSScraper:
         self.browser.close()
         self.playwright.stop()
 
+    def __enter__(self):
+        # Initialize resources
+        self.playwright = sync_playwright().start()
+        self.browser = self.playwright.chromium.launch(headless=True)
+        self.page = self.browser.new_page()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Clean up resources
+        self.close()
+
 
 # Usage example
 if __name__ == "__main__":
-    scraper = TDSScraper()
-
-    try:
+    with TDSScraper() as scraper:
         # Scrape all content
         content = scraper.scrape_all_sections()
         # Save to file
@@ -223,5 +226,3 @@ if __name__ == "__main__":
             print(
                 f"- {section.get('course_title', 'Unknown')} ({len(section.get('sections', []))} subsections)"
             )
-    finally:
-        scraper.close()

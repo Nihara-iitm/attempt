@@ -30,18 +30,6 @@ class DiscourseScraper:
         self.date_from = date_from
         self.date_to = date_to
 
-        # Set up Playwright
-        self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=True)
-        self.context = self.browser.new_context()
-        self.page = self.context.new_page()
-
-        if not self.is_authenticated():
-            print("Authenticating...")
-            self.login_and_save_auth()
-        else:
-            print("Using the existing authenticated session.")
-
     def login_and_save_auth(self):
         print("No authentication found. Opening browser for manual login...")
         self.browser = self.playwright.chromium.launch(headless=False)
@@ -166,15 +154,30 @@ class DiscourseScraper:
         self.browser.close()
         self.playwright.stop()
 
+    def __enter__(self):
+        # Initialize resources
+        self.playwright = sync_playwright().start()
+        self.browser = self.playwright.chromium.launch(headless=True)
+        self.context = self.browser.new_context()
+        self.page = self.context.new_page()
+
+        if not self.is_authenticated():
+            print("Authenticating...")
+            self.login_and_save_auth()
+        else:
+            print("Using the existing authenticated session.")
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Clean up resources
+        self.close()
+
 
 def main():
-    scraper = DiscourseScraper()
-
-    try:
+    with DiscourseScraper() as scraper:
         posts = scraper.scrape_posts()
         scraper.save_to_parquet(posts)
-    finally:
-        scraper.close()
 
 
 if __name__ == "__main__":
