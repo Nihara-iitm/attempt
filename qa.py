@@ -14,21 +14,15 @@ openai_client = OpenAI(
 
 
 def get_answer(
-    my_duckdb: duckdb.DuckDBPyConnection, query: str, image_text: str | None = None
+    my_duckdb: duckdb.DuckDBPyConnection,
+    query: str,
+    image_data: str | None,
+    max_sources: int,
 ) -> dict[str, str | list[dict[str, str]]]:
     query_vector = model.encode(query).tolist()
-    entries = search_similar(my_duckdb, query_vector, 1)
+    entries = search_similar(my_duckdb, query_vector, max_sources)
     links = [{"text": entry["title"], "url": entry["url"]} for entry in entries]
     texts = list(chain(*[entry["text"] for entry in entries]))
-
-    image_text_prompt = (
-        f"""
-        Given the text reading from attached image:
-        {image_text}
-        """
-        if image_text
-        else ""
-    )
 
     answer_response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
@@ -42,12 +36,20 @@ def get_answer(
             },
             {
                 "role": "user",
-                "content": f"""
-                Given the texts:
-                {texts}
-                {image_text_prompt}
-                Answer the question: {query}
-                """,
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"""
+                        Given the texts:
+                        {texts}
+                        Answer the question: {query}
+                        """,
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
             },
         ],
     )
@@ -60,9 +62,9 @@ def get_answer(
 async def main():
     my_duckdb = get_duckdb()
     q = input("Enter your question: ")
-    result = get_answer(my_duckdb, q)
-    print("\n🧠 Answer:\n", result.answer)
-    print("\n🔗 Sources:")
+    result = get_answer(my_duckdb, q, None, 3)
+    print("\nAnswer:\n", result.answer)
+    print("\nSources:")
     for src in result.links:
         print("-", src.text, ":", src.url)
 

@@ -2,8 +2,8 @@ import base64
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field, HttpUrl, computed_field
+from fastapi import FastAPI
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 from db import get_duckdb, has_data, prepare_db
 from embedding.discourse import embed_discourse
@@ -35,15 +35,15 @@ class QuestionRequest(BaseModel):
     question: str
     image: Annotated[str | None, Field(description="Optional base64 image")] = None
 
-    @computed_field
-    @property
-    def image_data(self) -> bytes | None:
+    @field_validator("image")
+    def validate_image(cls, v: str | None) -> str | None:
         # Decode the base64 image if provided
-        if self.image:
+        if v:
             try:
-                return base64.b64decode(self.image)
+                base64.b64decode(v)
             except Exception:
-                raise HTTPException(status_code=422, detail="Invalid base64 image data")
+                raise ValueError("Invalid base64 image data")
+        return v
 
 
 class Link(BaseModel):
@@ -61,4 +61,4 @@ async def process_question(
     data: QuestionRequest,
 ) -> dict[str, str | list[dict[str, str]]]:
     my_duckdb = get_duckdb()
-    return get_answer(my_duckdb, data.question, data.image_data)
+    return get_answer(my_duckdb, data.question, data.image, max_sources=3)
