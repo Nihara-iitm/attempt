@@ -56,9 +56,14 @@ class QuestionResponse(BaseModel):
     links: list[Link]
 
 
-@app.post("/api", response_model=QuestionResponse)
 async def process_question(
     data: QuestionRequest,
 ) -> dict[str, str | list[dict[str, str]]]:
     my_duckdb = get_duckdb()
     return get_answer(my_duckdb, data.question, data.image, max_sources=3)
+
+
+# Without forwarding slash is the standard
+# but forward slash is mentioned in the project description
+app.post("/api", response_model=QuestionResponse)(process_question)
+app.post("/api/", response_model=QuestionResponse)(process_question)
