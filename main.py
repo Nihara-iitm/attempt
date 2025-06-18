@@ -60,7 +60,7 @@ async def process_question(
     data: QuestionRequest,
 ) -> dict[str, str | list[dict[str, str]]]:
     my_duckdb = get_duckdb()
-    return get_answer(my_duckdb, data.question, data.image, max_sources=3)
+    return get_answer(my_duckdb, data.question, data.image, max_sources=10)
 
 
 # Without forwarding slash is the standard
