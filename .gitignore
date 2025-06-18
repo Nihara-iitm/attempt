@@ -345,7 +345,6 @@ pip-selfcheck.json
 
 
 # Project specific
-data/
 *.parquet
 auth.json
-tds_pages/
+*.duckdb
