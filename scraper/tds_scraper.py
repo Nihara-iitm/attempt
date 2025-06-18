@@ -19,6 +19,7 @@ class TDSDataSection(TypedDict):
 
 class TDSData(TypedDict):
     course_title: str
+    url: str
     sections: list[TDSDataSection]
     links: list[TDSLink]
 
@@ -26,7 +27,7 @@ class TDSData(TypedDict):
 class TDSScraper:
     def scrape_course_content(
         self,
-        base_url: str = "https://tds.s-anand.net/#/2025-01/",
+        base_url: str,
     ) -> TDSData:
         try:
             print(f"Loading {base_url}")
@@ -37,7 +38,12 @@ class TDSScraper:
             soup = BeautifulSoup(page_source, "html.parser")
 
             # Extract main content
-            content_data: TDSData = {"course_title": "", "sections": [], "links": []}
+            content_data: TDSData = {
+                "course_title": "",
+                "url": base_url,
+                "sections": [],
+                "links": [],
+            }
 
             # Try to find the main content area
             # This will depend on the actual HTML structure

@@ -17,6 +17,7 @@ def embed_tds(file_path: str):
     for row in tqdm(tds_data, desc="Embedding TDS Data"):
         record = dict(zip(columns, row))
         course_title = record["course_title"]
+        url = record["url"]
         links = record.get("links", [])
         sections = record.get("sections", [])
 
@@ -32,6 +33,7 @@ def embed_tds(file_path: str):
             metadata = {
                 "source": "tds",
                 "course_title": course_title,
+                "url": url,
                 "heading": heading,
                 "links": links,
             }
