@@ -73,7 +73,11 @@ def search_similar(
     res = []
     for source, text, mtdata, distance in results:
         metadata = json.loads(mtdata)
-        title = metadata.get("course_title", "Discussion")
+        title = (
+            metadata.get("course_title", "")
+            if source == "tds"
+            else metadata.get("topic_title", "")
+        )
         url = metadata.get("url", "")
         res.append(DataEntry(text=text, title=title, url=url))
     return res
