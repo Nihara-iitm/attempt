@@ -1,7 +1,7 @@
 from itertools import chain
 
 import duckdb
-from openai import BaseModel, OpenAI
+from openai import OpenAI
 
 from config import settings
 from db import get_duckdb, search_similar
@@ -13,19 +13,9 @@ openai_client = OpenAI(
 )
 
 
-class Link(BaseModel):
-    text: str
-    url: str | None
-
-
-class Answer(BaseModel):
-    answer: str
-    links: list[Link]
-
-
 def get_answer(
     my_duckdb: duckdb.DuckDBPyConnection, query: str, image_text: str | None = None
-) -> Answer:
+) -> dict[str, str | list[dict[str, str]]]:
     query_vector = model.encode(query).tolist()
     entries = search_similar(my_duckdb, query_vector, 1)
     links = [{"text": entry["title"], "url": entry["url"]} for entry in entries]
@@ -61,7 +51,10 @@ def get_answer(
             },
         ],
     )
-    return Answer(answer=answer_response.choices[0].message.content, links=links)
+    return {
+        "answer": answer_response.choices[0].message.content,
+        "links": links,
+    }
 
 
 async def main():
